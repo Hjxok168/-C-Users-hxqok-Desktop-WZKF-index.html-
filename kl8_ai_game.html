@@ -14,7 +14,8 @@
             frequencyData: [],
             predictionHistory: [],
             isDataLoaded: false,
-            selectedNumbers: new Set()
+            selectedNumbers: new Set(),
+            positionCharts: {}
         };
 
         tailwind.config = {
@@ -303,7 +304,7 @@
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-lg font-semibold">号码位置走势图</h3>
                         <div class="flex items-center space-x-3">
-                            <select id="positionChartPeriods" class="border rounded-md px-3 py-1.5 text-sm">
+                            <select id="positionChartPeriods" class="border rounded-md px-3 py-1.5 text-sm" aria-label="选择走势图显示期数">
                                 <option value="10">最近10期</option>
                                 <option value="20" selected>最近20期</option>
                                 <option value="30">最近30期</option>
@@ -1950,7 +1951,9 @@
             try {
                 // 直接使用备份数据
                 const simpleCreateData = [
+                    { period: "2025273", numbers: ["08", "09", "11", "13", "14", "18", "20", "24", "28", "30", "31", "32", "38", "39", "40", "46", "62", "64", "69", "70"] },
                     { period: "2025272", numbers: ["03", "06", "09", "10", "11", "13", "14", "16", "20", "22", "25", "43", "47", "50", "60", "61", "62", "68", "73", "79"] },
+
                     { period: "2025271", numbers: ["01", "03", "07", "15", "17", "20", "27", "37", "41", "42", "47", "48", "53", "54", "60", "62", "63", "68", "77", "78"] },
                     { period: "2025270", numbers: ["02", "08", "10", "20", "21", "27", "28", "30", "33", "36", "43", "48", "49", "52", "60", "61", "64", "71", "75", "79"] },  
                     { period: "2025269", numbers: ["01", "08", "10", "15", "19", "20", "24", "30", "33", "43", "49", "50", "56", "57", "60", "67", "70", "73", "78", "80"] },
@@ -2260,11 +2263,22 @@
             ];
             const borderColor = colors[position - 1];
             
-            // 创建图表实例
+            // 初始化位置图表对象
             if (!localState.positionCharts) {
                 localState.positionCharts = {};
             }
             
+            // 先销毁已存在的图表实例（如果有）
+            if (localState.positionCharts[position]) {
+                localState.positionCharts[position].destroy();
+            }
+            
+            // 另外，直接检查canvas元素上是否有Chart实例并销毁它
+            if (ctx && ctx.chart) {
+                ctx.chart.destroy();
+            }
+            
+            // 创建新的图表实例
             localState.positionCharts[position] = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -2327,8 +2341,10 @@
         
         // 初始化所有位置的走势图
         function initPositionCharts() {
-            // 创建图表实例数组
-            localState.positionCharts = {};
+            // 确保positionCharts对象存在
+            if (!localState.positionCharts) {
+                localState.positionCharts = {};
+            }
             
             // 初始化所有20个位置的走势图
             for (let i = 1; i <= 20; i++) {
@@ -3430,15 +3446,17 @@
         
         // 初始化页面
         function initPage() {
-            // 加载历史数据
-            loadKl8HistoryData();
-            
-            // 初始化走势图
-            initPositionCharts();
-            
             // 初始化事件监听器
             bindEventListeners();
             initEventListeners();
+            
+            // 加载历史数据
+            loadKl8HistoryData();
+            
+            // 使用setTimeout确保在数据加载后再初始化走势图
+            setTimeout(() => {
+                initPositionCharts();
+            }, 100);
         }
         
         // 页面加载完成后初始化
