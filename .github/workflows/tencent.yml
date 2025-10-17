@@ -80,24 +80,43 @@ jobs:
     - name: Check Tencent Cloud credentials
       id: check_credentials
       run: |
+        # 为测试目的，添加一个可选的测试模式标志
+        TEST_MODE=false
+        
         # 检查腾讯云API密钥是否配置
         if [ -z "${{ secrets.TENCENT_CLOUD_SECRET_ID }}" ] || [ -z "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}" ]; then
-          echo "::warning::Tencent Cloud API credentials not found in GitHub Secrets"
-          echo "需要在GitHub仓库的Settings > Secrets and variables > Actions中添加以下secrets："
-          echo "- TENCENT_CLOUD_SECRET_ID: 腾讯云账号的SecretId"
-          echo "- TENCENT_CLOUD_SECRET_KEY: 腾讯云账号的SecretKey"
-          echo "这些凭据用于连接TKE集群"
-          echo "credentials_available=false" >> $GITHUB_OUTPUT
+          if [ "$TEST_MODE" = "true" ]; then
+            # 测试模式：设置模拟凭据标志
+            echo "::warning::Running in TEST MODE with mock credentials"
+            echo "credentials_available=true" >> $GITHUB_OUTPUT
+            echo "test_mode=true" >> $GITHUB_OUTPUT
+          else
+            # 正常模式：凭据不可用
+            echo "::warning::Tencent Cloud API credentials not found in GitHub Secrets"
+            echo "需要在GitHub仓库的Settings > Secrets and variables > Actions中添加以下secrets："
+            echo "- TENCENT_CLOUD_SECRET_ID: 腾讯云账号的SecretId"
+            echo "- TENCENT_CLOUD_SECRET_KEY: 腾讯云账号的SecretKey"
+            echo "这些凭据用于连接TKE集群"
+            echo "credentials_available=false" >> $GITHUB_OUTPUT
+          fi
         else
+          # 凭据可用
           echo "credentials_available=true" >> $GITHUB_OUTPUT
+          echo "test_mode=false" >> $GITHUB_OUTPUT
+          echo "Tencent Cloud credentials are configured"
         fi
 
     - name: Set up ~/.kube/config for connecting TKE cluster
       if: steps.check_credentials.outputs.credentials_available == 'true'
       uses: TencentCloud/tke-cluster-credential-action@v1
+      # 使用环境变量传递密钥，避免直接在参数中引用可能为空的secrets
+      env:
+        TENCENTCLOUD_SECRET_ID: ${{ secrets.TENCENT_CLOUD_SECRET_ID }}
+        TENCENTCLOUD_SECRET_KEY: ${{ secrets.TENCENT_CLOUD_SECRET_KEY }}
       with:
-        secret_id: ${{ secrets.TENCENT_CLOUD_SECRET_ID }}
-        secret_key: ${{ secrets.TENCENT_CLOUD_SECRET_KEY }}
+        # 直接从环境变量读取，而不是直接引用secrets
+        secret_id: ${{ env.TENCENTCLOUD_SECRET_ID }}
+        secret_key: ${{ env.TENCENTCLOUD_SECRET_KEY }}
         tke_region: ${{ env.TKE_REGION }}
         cluster_id: ${{ env.TKE_CLUSTER_ID }}
 
@@ -110,10 +129,29 @@ jobs:
     - name: Deploy
       if: steps.check_credentials.outputs.credentials_available == 'true'
       run: |
-        ./kustomize edit set image ${TKE_IMAGE_URL}:${GITHUB_SHA}
-        ./kustomize build . | kubectl apply -f -
-        kubectl rollout status deployment/${DEPLOYMENT_NAME}
-        kubectl get services -o wide
+        # 显示当前环境信息
+        echo "部署信息："
+        echo "- 镜像URL: ${TKE_IMAGE_URL}:${GITHUB_SHA}"
+        echo "- 集群ID: ${TKE_CLUSTER_ID}"
+        echo "- 区域: ${TKE_REGION}"
+        echo "- 部署名称: ${DEPLOYMENT_NAME}"
+        echo "- 测试模式: ${TEST_MODE:-false}"
+        
+        # 如果是测试模式，只显示将要执行的命令而不实际执行
+        if [ "${{ steps.check_credentials.outputs.test_mode }}" = "true" ]; then
+          echo "::warning::测试模式下，仅显示部署命令而不实际执行"
+          echo "命令1: ./kustomize edit set image ${TKE_IMAGE_URL}:${GITHUB_SHA}"
+          echo "命令2: ./kustomize build . | kubectl apply -f -"
+          echo "命令3: kubectl rollout status deployment/${DEPLOYMENT_NAME}"
+          echo "命令4: kubectl get services -o wide"
+        else
+          # 正常模式下执行部署命令
+          echo "执行实际部署..."
+          ./kustomize edit set image ${TKE_IMAGE_URL}:${GITHUB_SHA}
+          ./kustomize build . | kubectl apply -f -
+          kubectl rollout status deployment/${DEPLOYMENT_NAME}
+          kubectl get services -o wide
+        fi
         
     - name: Skip deployment
       if: steps.check_credentials.outputs.credentials_available == 'false'
