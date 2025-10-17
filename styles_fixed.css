@@ -12,6 +12,57 @@ body {
     background-color: #F9FAFB;
     color: #1D2129;
     line-height: 1.6;
+    
+    /* 为了显示同步状态条留出空间 */
+    padding-top: 40px !important;
+}
+
+/* 数据同步状态条 */
+.data-sync-status {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background-color: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    animation: slideDown 0.3s ease-out;
+}
+
+/* 同步指示器动画 */
+.sync-indicator {
+    width: var(--sync-indicator-size);
+    height: var(--sync-indicator-size);
+    background-color: var(--success);
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: var(--sync-indicator-animation);
+}
+
+/* 动画定义 */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+/* 样式加载成功指示器 */
+.styles-loaded .data-sync-status::after {
+    content: ' (样式已加载)';
+    color: #a5d6ff;
+    font-size: 12px;
 }
 
 /* 颜色变量 */
@@ -35,6 +86,10 @@ body {
     --gray-700: #374151;
     --gray-800: #1F2937;
     --gray-900: #111827;
+    
+    /* 同步指示器样式 */
+    --sync-indicator-size: 8px;
+    --sync-indicator-animation: pulse 2s infinite;
 }
 
 /* 滚动条样式 */

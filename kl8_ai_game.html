@@ -12,7 +12,7 @@
     <!-- 然后替换为: <link href="dist/output.css" rel="stylesheet"> -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="styles_fixed.css" rel="stylesheet">
+    <link href="styles_fixed.css" rel="stylesheet" onload="console.log('styles_fixed.css加载成功'); document.documentElement.classList.add('styles-loaded');" onerror="console.error('styles_fixed.css加载失败');">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     <script>
         // 全局状态管理
@@ -22,8 +22,45 @@
             predictionHistory: [],
             isDataLoaded: false,
             selectedNumbers: new Set(),
-            positionCharts: {}
+            positionCharts: {},
+            lastSyncTime: null
         };
+        
+        // 检查localStorage中是否有保存的数据
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('kl8SyncData');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    if (parsed.kl8HistoryData && Array.isArray(parsed.kl8HistoryData)) {
+                        console.log('从localStorage加载数据:', parsed.kl8HistoryData.length, '条');
+                        localState.kl8HistoryData = parsed.kl8HistoryData;
+                        localState.lastSyncTime = parsed.lastSyncTime;
+                        localState.isDataLoaded = true;
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.error('从localStorage加载数据失败:', e);
+            }
+            return false;
+        }
+        
+        // 保存数据到localStorage用于同步
+        function saveToLocalStorage() {
+            try {
+                const syncData = {
+                    kl8HistoryData: localState.kl8HistoryData,
+                    lastSyncTime: new Date().toISOString()
+                };
+                localStorage.setItem('kl8SyncData', JSON.stringify(syncData));
+                console.log('数据已保存到localStorage');
+                return true;
+            } catch (e) {
+                console.error('保存数据到localStorage失败:', e);
+                return false;
+            }
+        }
 
         tailwind.config = {
             theme: {
@@ -142,6 +179,11 @@
 <!-- 不再直接引入数据文件，而是通过Fetch API动态获取 -->
 </head>
 <body class="bg-gray-50 min-h-screen">
+        <!-- 数据同步状态条 -->
+        <div id="dataSyncStatus" class="data-sync-status">
+            <span class="sync-indicator"></span>
+            <span>数据同步中...</span>
+        </div>
     <!-- 顶部导航栏 -->
     <nav class="bg-white shadow-md">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -1810,8 +1852,12 @@
                 }
                 
                 try {
-                    // 直接使用备份数据
-                    const simpleCreateData = [
+                    // 优先从localStorage加载数据
+                    if (loadFromLocalStorage()) {
+                        console.log('使用localStorage中的数据');
+                    } else {
+                        // 如果localStorage中没有数据，使用备份数据
+                        const simpleCreateData = [
                         { period: "2025274", numbers: ["02", "03", "10", "18", "26", "31", "33", "34", "46", "49", "50", "51", "54", "55", "60", "62", "74", "75", "76", "80"] },
                         { period: "2025273", numbers: ["08", "09", "11", "13", "14", "18", "20", "24", "28", "30", "31", "32", "38", "39", "40", "46", "62", "64", "69", "70"] },
 
@@ -1854,6 +1900,10 @@
                     
                     // 使用去重排序函数确保数据格式正确
                     localState.kl8HistoryData = deduplicateAndSortData(simpleCreateData);
+                    }
+                    
+                    // 保存数据到localStorage
+                    saveToLocalStorage();
                     
                     // 标记数据已加载
                     localState.isDataLoaded = true;
@@ -1908,6 +1958,13 @@
                     showNotification('历史数据加载成功', 'success');
                     
                     console.log('快乐8历史数据加载成功，共加载', localState.kl8HistoryData.length, '期数据');
+                    
+                    // 更新同步状态条
+                    const syncStatusElement = document.getElementById('dataSyncStatus');
+                    if (syncStatusElement) {
+                        syncStatusElement.querySelector('span:last-child').textContent = 
+                            `数据已同步 (${localState.kl8HistoryData.length} 条记录)`;
+                    }
                     
                     // 成功完成后解析Promise
                     resolve(localState.kl8HistoryData);
@@ -2531,6 +2588,9 @@
                     // 合并数据并去重排序
                     const mergedData = [...localState.kl8HistoryData, ...validData];
                     localState.kl8HistoryData = deduplicateAndSortData(mergedData);
+                    
+                    // 保存更新后的数据到localStorage
+                    saveToLocalStorage();
                     
                     // 更新UI
                     renderKl8HistoryData();
