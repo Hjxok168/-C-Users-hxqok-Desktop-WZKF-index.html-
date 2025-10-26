@@ -3096,13 +3096,13 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '位置' + position + '号码',
+                        label: '', // 隐藏标签
                         data: positionNumbers,
                         borderColor: borderColor,
                         backgroundColor: borderColor + '1A', // 10% opacity
                         tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 6, // 增大圆点大小
+                        pointHoverRadius: 8,
                         fill: false
                     }]
                 },
@@ -3115,17 +3115,13 @@
                     },
                     plugins: {
                         legend: {
-                            position: 'top',
+                            display: false, // 隐藏图例
                         },
                         title: {
                             display: false
                         },
                         tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return '位置' + position + ': ' + context.raw;
-                                }
-                            }
+                            enabled: false // 禁用提示框
                         },
                         // 自定义插件实现数字显示
                         customLabels: {
@@ -3141,17 +3137,17 @@
                                                 // 获取数据点的位置
                                                 const x = element.x;
                                                 const y = element.y;
-                                                
-                                                // 设置样式
+                                                 
+                                                // 设置样式 - 使用更大更清晰的字体
                                                 ctx.save();
-                                                ctx.font = 'bold 10px Arial';
+                                                ctx.font = 'bold 12px Arial';
                                                 ctx.fillStyle = '#000';
                                                 ctx.textAlign = 'center';
-                                                ctx.textBaseline = 'bottom';
-                                                
-                                                // 在数据点上方绘制数字
-                                                ctx.fillText(value, x, y - 10);
-                                                
+                                                ctx.textBaseline = 'middle';
+                                                 
+                                                // 在数据点中央绘制数字
+                                                ctx.fillText(value, x, y);
+                                                 
                                                 ctx.restore();
                                             }
                                         });
@@ -3162,21 +3158,24 @@
                     },
                     scales: {
                         x: {
-                            title: {
-                                display: true,
-                                text: '期号'
+                            display: false, // 隐藏x轴（期号）
+                            grid: {
+                                display: false // 隐藏网格线
                             }
                         },
                         y: {
-                            title: {
-                                display: true,
-                                text: '号码'
+                            display: false, // 隐藏y轴（号码）
+                            grid: {
+                                display: false // 隐藏网格线
                             },
                             min: 0,
-                            max: 80,
-                            ticks: {
-                                stepSize: 10
-                            }
+                            max: 80
+                        }
+                    },
+                    elements: {
+                        point: {
+                            backgroundColor: borderColor, // 圆点颜色
+                            borderWidth: 0 // 无边框
                         }
                     }
                 }
