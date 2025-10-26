@@ -3187,6 +3187,16 @@
         
         // 更新指定位置的走势图
         function updatePositionChart(position, numPeriods = 20) {
+            // 为了确保修改生效，我们将强制重新创建图表而不是仅更新数据
+            if (localState.positionCharts && localState.positionCharts[position]) {
+                localState.positionCharts[position].destroy();
+                delete localState.positionCharts[position];
+            }
+            
+            // 强制重新初始化图表
+            initPositionChart(position);
+            
+            // 以下是原始更新逻辑，保留供参考
             if (!localState.positionCharts || !localState.positionCharts[position] || !localState.kl8HistoryData || localState.kl8HistoryData.length === 0) {
                 return;
             }
