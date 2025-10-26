@@ -432,6 +432,9 @@
                         <button class="position-page-btn px-3 py-1.5 rounded-md text-sm border ${page === 4 ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}" data-page="4">
                             位置 16-20
                         </button>
+                        <button class="position-page-btn px-3 py-1.5 rounded-md text-sm border ${page === 5 ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}" data-page="5">
+                            末位号码
+                        </button>
                     </div>
                     
                     <!-- 图表容器 - 每页显示5个图表 -->
@@ -549,6 +552,60 @@
                             <div class="h-60 mb-4">
                                 <h4 class="text-base font-medium mb-2">第二十个号码（位置20）</h4>
                                 <canvas id="positionChart20"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 第5页：末位号码 (默认隐藏) -->
+                        <div id="positionChartsPage5" class="hidden">
+                            <!-- 末位0 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为0的号码位置</h4>
+                                <canvas id="lastDigitChart0"></canvas>
+                            </div>
+                            <!-- 末位1 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为1的号码位置</h4>
+                                <canvas id="lastDigitChart1"></canvas>
+                            </div>
+                            <!-- 末位2 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为2的号码位置</h4>
+                                <canvas id="lastDigitChart2"></canvas>
+                            </div>
+                            <!-- 末位3 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为3的号码位置</h4>
+                                <canvas id="lastDigitChart3"></canvas>
+                            </div>
+                            <!-- 末位4 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为4的号码位置</h4>
+                                <canvas id="lastDigitChart4"></canvas>
+                            </div>
+                            <!-- 末位5 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为5的号码位置</h4>
+                                <canvas id="lastDigitChart5"></canvas>
+                            </div>
+                            <!-- 末位6 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为6的号码位置</h4>
+                                <canvas id="lastDigitChart6"></canvas>
+                            </div>
+                            <!-- 末位7 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为7的号码位置</h4>
+                                <canvas id="lastDigitChart7"></canvas>
+                            </div>
+                            <!-- 末位8 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为8的号码位置</h4>
+                                <canvas id="lastDigitChart8"></canvas>
+                            </div>
+                            <!-- 末位9 -->
+                            <div class="h-60 mb-4">
+                                <h4 class="text-base font-medium mb-2">末位为9的号码位置</h4>
+                                <canvas id="lastDigitChart9"></canvas>
                             </div>
                         </div>
                     </div>
@@ -3199,12 +3256,167 @@
                 localState.positionCharts = {};
             }
             
+            // 销毁所有末位号码图表实例
+            if (localState.lastDigitCharts) {
+                Object.keys(localState.lastDigitCharts).forEach(digit => {
+                    if (localState.lastDigitCharts[digit]) {
+                        localState.lastDigitCharts[digit].destroy();
+                    }
+                });
+                // 清空lastDigitCharts对象
+                localState.lastDigitCharts = {};
+            }
+            
             // 重新初始化所有图表
             initPositionCharts();
         }
         
         // 暴露给全局作用域，以便在控制台或其他地方调用
         window.forceRefreshCharts = forceRefreshAllPositionCharts;
+        
+        // 初始化末位号码走势图
+        function initLastDigitChart(digit) {
+            const ctx = document.getElementById('lastDigitChart' + digit);
+            if (!ctx || !localState.kl8HistoryData || localState.kl8HistoryData.length === 0) {
+                return null;
+            }
+            
+            // 使用指定数量的最近几期数据来显示走势图
+            const numPeriods = parseInt(document.getElementById('positionChartPeriods')?.value || 20);
+            const displayData = localState.kl8HistoryData.slice(0, numPeriods).reverse();
+            
+            // 准备期号数据（只显示后三位）
+            const drawDates = displayData.map(item => item.period.slice(-3));
+            
+            // 为每个末位数字获取每期出现的位置
+            const positionNumbers = displayData.map(item => {
+                if (!item.numbers || item.numbers.length === 0) {
+                    return null;
+                }
+                
+                // 找到末位等于digit的第一个号码的位置
+                for (let i = 0; i < item.numbers.length; i++) {
+                    const number = parseInt(item.numbers[i]);
+                    if (number % 10 === digit) {
+                        return i + 1; // 返回位置（从1开始）
+                    }
+                }
+                return null; // 如果没有找到，返回null
+            });
+            
+            // 数字颜色根据末位不同变化
+            const digitColors = [
+                '#FF6384', // 0 - 红色
+                '#36A2EB', // 1 - 蓝色
+                '#FFCE56', // 2 - 黄色
+                '#4BC0C0', // 3 - 青色
+                '#9966FF', // 4 - 紫色
+                '#FF9F40', // 5 - 橙色
+                '#C9CBCF', // 6 - 灰色
+                '#4BC0C0', // 7 - 青色
+                '#FF6384', // 8 - 红色
+                '#36A2EB'  // 9 - 蓝色
+            ];
+            
+            const numberColor = digitColors[digit] || '#165DFF';
+            
+            // 创建图表实例
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: drawDates,
+                    datasets: [{
+                        label: `末位${digit}`,
+                        data: positionNumbers,
+                        backgroundColor: numberColor + '20',
+                        borderColor: numberColor,
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointBackgroundColor: numberColor,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+                        numberLabels: {
+                            // 数字标签将通过插件添加
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: '#f0f0f0'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            beginAtZero: true,
+                            max: 20,
+                            ticks: {
+                                stepSize: 5
+                            },
+                            grid: {
+                                display: true,
+                                color: '#f0f0f0'
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 20
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                },
+                plugins: [{
+                    id: 'numberLabels',
+                    afterDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillStyle = numberColor;
+                        
+                        // 绘制号码标签，调整位置避免重叠
+                        chart.data.datasets.forEach((dataset, datasetIndex) => {
+                            const meta = chart.getDatasetMeta(datasetIndex);
+                            meta.data.forEach((point, index) => {
+                                const value = dataset.data[index];
+                                if (value !== null && value !== undefined) {
+                                    // 为避免重叠，在数据点上方添加足够空间
+                                    ctx.fillText(value.toString(), point.x, point.y - 10);
+                                }
+                            });
+                        });
+                    }
+                }]
+            });
+            
+            // 存储图表实例
+            if (!localState.lastDigitCharts) {
+                localState.lastDigitCharts = {};
+            }
+            localState.lastDigitCharts[digit] = chart;
+            
+            return chart;
+        }
         
         // 初始化所有位置的走势图
         function initPositionCharts() {
@@ -3221,31 +3433,65 @@
                 }
             }
             
+            // 初始化所有末位号码走势图（0-9）
+            for (let i = 0; i <= 9; i++) {
+                const ctx = document.getElementById('lastDigitChart' + i);
+                if (ctx) {
+                    initLastDigitChart(i);
+                }
+            }
+            
             // 添加分页切换功能
-            const tabButtons = document.querySelectorAll('.position-chart-tab');
-            tabButtons.forEach(button => {
+            const pageButtons = document.querySelectorAll('.position-page-btn');
+            pageButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    // 移除所有标签的激活状态
-                    tabButtons.forEach(btn => btn.classList.remove('active', 'bg-blue-500', 'text-white'));
-                    tabButtons.forEach(btn => btn.classList.add('bg-gray-200', 'text-gray-700'));
+                    // 获取要显示的页码
+                    const page = parseInt(this.getAttribute('data-page'));
                     
-                    // 设置当前标签为激活状态
-                    this.classList.remove('bg-gray-200', 'text-gray-700');
-                    this.classList.add('active', 'bg-blue-500', 'text-white');
+                    // 更新按钮状态
+                    pageButtons.forEach(btn => {
+                        const btnPage = parseInt(btn.getAttribute('data-page'));
+                        if (btnPage === page) {
+                            btn.classList.add('bg-primary', 'text-white', 'border-primary');
+                            btn.classList.remove('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+                        } else {
+                            btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+                            btn.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+                        }
+                    });
                     
-                    // 隐藏所有图表容器
-                    const chartContainers = document.querySelectorAll('.position-chart-container');
-                    chartContainers.forEach(container => container.classList.add('hidden'));
+                    // 隐藏所有页面
+                    for (let i = 1; i <= 5; i++) {
+                        const pageElement = document.getElementById('positionChartsPage' + i);
+                        if (pageElement) {
+                            pageElement.classList.add('hidden');
+                        }
+                    }
                     
-                    // 显示当前标签对应的图表容器
-                    const tabId = this.id;
-                    const containerId = tabId.replace('tab', 'container');
-                    const container = document.getElementById(containerId);
-                    if (container) {
-                        container.classList.remove('hidden');
+                    // 显示选中的页面
+                    const activePageElement = document.getElementById('positionChartsPage' + page);
+                    if (activePageElement) {
+                        activePageElement.classList.remove('hidden');
                     }
                 });
             });
+            
+            // 添加期数选择器事件监听
+            const periodSelector = document.getElementById('positionChartPeriods');
+            if (periodSelector) {
+                periodSelector.addEventListener('change', function() {
+                    updateAllPositionCharts(parseInt(this.value));
+                });
+            }
+            
+            // 添加更新按钮事件监听
+            const updateBtn = document.getElementById('updateAllChartsBtn');
+            if (updateBtn) {
+                updateBtn.addEventListener('click', function() {
+                    const numPeriods = parseInt(document.getElementById('positionChartPeriods')?.value || 20);
+                    updateAllPositionCharts(numPeriods);
+                });
+            }
         }
         
         // 更新指定位置的走势图
@@ -3284,18 +3530,41 @@
             localState.positionCharts[position].update();
         }
         
+        // 更新末位号码走势图
+        function updateLastDigitChart(digit, numPeriods = 20) {
+            // 为了确保修改生效，我们将强制重新创建图表
+            if (localState.lastDigitCharts && localState.lastDigitCharts[digit]) {
+                localState.lastDigitCharts[digit].destroy();
+                delete localState.lastDigitCharts[digit];
+            }
+            
+            // 强制重新初始化图表
+            initLastDigitChart(digit);
+        }
+        
         // 更新所有位置的走势图
         function updateAllPositionCharts(numPeriods = 20) {
             // 验证数据和图表存在性
-            if (!localState.positionCharts || !localState.kl8HistoryData || localState.kl8HistoryData.length === 0) {
-                console.warn('没有有效的历史数据或图表实例可供更新');
+            if (!localState.kl8HistoryData || localState.kl8HistoryData.length === 0) {
+                console.warn('没有有效的历史数据可供更新');
                 return;
             }
             
             // 遍历所有位置更新图表
-            for (let i = 1; i <= 20; i++) {
-                if (localState.positionCharts[i]) {
-                    updatePositionChart(i, numPeriods);
+            if (localState.positionCharts) {
+                for (let i = 1; i <= 20; i++) {
+                    if (localState.positionCharts[i]) {
+                        updatePositionChart(i, numPeriods);
+                    }
+                }
+            }
+            
+            // 遍历所有末位号码更新图表
+            if (localState.lastDigitCharts) {
+                for (let i = 0; i <= 9; i++) {
+                    if (localState.lastDigitCharts[i]) {
+                        updateLastDigitChart(i, numPeriods);
+                    }
                 }
             }
         }
