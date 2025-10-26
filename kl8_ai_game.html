@@ -3143,6 +3143,27 @@
             });
         }
         
+        // 强制刷新所有位置图表的函数
+        function forceRefreshAllPositionCharts() {
+            console.log('强制刷新所有位置图表');
+            // 销毁所有现有图表实例
+            if (localState.positionCharts) {
+                Object.keys(localState.positionCharts).forEach(position => {
+                    if (localState.positionCharts[position]) {
+                        localState.positionCharts[position].destroy();
+                    }
+                });
+                // 清空positionCharts对象
+                localState.positionCharts = {};
+            }
+            
+            // 重新初始化所有图表
+            initPositionCharts();
+        }
+        
+        // 暴露给全局作用域，以便在控制台或其他地方调用
+        window.forceRefreshCharts = forceRefreshAllPositionCharts;
+        
         // 初始化所有位置的走势图
         function initPositionCharts() {
             // 确保positionCharts对象存在
@@ -4655,6 +4676,14 @@
             // 使用setTimeout确保在数据加载后再初始化走势图
             setTimeout(() => {
                 initPositionCharts();
+                
+                // 添加另一个延迟，确保图表初始化完成后再强制刷新，以应用我们的修改
+                setTimeout(() => {
+                    if (window.forceRefreshCharts) {
+                        console.log('在页面初始化后强制刷新所有位置图表');
+                        window.forceRefreshCharts();
+                    }
+                }, 200);
             }, 100);
         }
         
