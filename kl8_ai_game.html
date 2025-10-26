@@ -3035,25 +3035,7 @@
         // 初始化单个位置的走势图
         function initPositionChart(position) {
             const ctx = document.getElementById('positionChart' + position).getContext('2d');
-            
-            // 准备默认的空数据
-            let labels = [];
-            let positionNumbers = [];
-            
-            // 如果有历史数据，则使用它
-            if (localState.kl8HistoryData && localState.kl8HistoryData.length > 0) {
-                // 默认使用最近20期数据来显示走势图
-                const displayData = localState.kl8HistoryData.slice(0, 20).reverse();
-                labels = displayData.map(item => item.period);
-                
-                // 获取每期指定位置的号码
-                positionNumbers = displayData.map(item => {
-                    if (item.numbers && item.numbers.length >= position) {
-                        return parseInt(item.numbers[position - 1]);
-                    }
-                    return null;
-                });
-            }
+            const canvas = ctx.canvas;
             
             // 为不同位置选择不同的颜色
             const colors = [
@@ -3064,70 +3046,56 @@
             ];
             const numberColor = colors[position - 1];
             
-            // 初始化位置图表对象
+            // 准备数据
+            let positionNumbers = [];
+            
+            // 获取历史数据
+            if (localState.kl8HistoryData && localState.kl8HistoryData.length > 0) {
+                const displayData = localState.kl8HistoryData.slice(0, 20).reverse();
+                positionNumbers = displayData.map(item => {
+                    if (item.numbers && item.numbers.length >= position) {
+                        return parseInt(item.numbers[position - 1]);
+                    }
+                    return null;
+                }).filter(n => n !== null);
+            }
+            
+            // 销毁已存在的图表
+            if (localState.positionCharts && localState.positionCharts[position]) {
+                localState.positionCharts[position].destroy();
+            }
+            
+            // 确保positionCharts对象存在
             if (!localState.positionCharts) {
                 localState.positionCharts = {};
             }
             
-            // 先销毁已存在的图表实例（如果有）
-            if (localState.positionCharts[position]) {
-                localState.positionCharts[position].destroy();
-            }
-            
-            // 另外，直接检查canvas元素上是否有Chart实例并销毁它
-            if (ctx && ctx.chart) {
-                ctx.chart.destroy();
-            }
-            
-            // 创建一个非常简单的图表，仅用于布局
+            // 创建图表实例
             const chart = new Chart(ctx, {
-                type: 'scatter', // 使用scatter类型可以更好地控制点位置
+                type: 'line',
                 data: {
+                    labels: Array(positionNumbers.length).fill(''),
                     datasets: [{
-                        data: positionNumbers.map((value, index) => ({
-                            x: index, // 使用索引作为x坐标
-                            y: value
-                        })).filter(item => item.y !== null),
-                        backgroundColor: 'transparent', // 完全透明的点
-                        pointRadius: 0, // 隐藏点
-                        pointHoverRadius: 0
+                        data: positionNumbers.map((value, index) => ({x: index, y: value})),
+                        borderColor: numberColor,
+                        backgroundColor: numberColor + '20',
+                        pointRadius: 4,
+                        pointBackgroundColor: numberColor,
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 0
+                    },
                     plugins: {
                         legend: {
                             display: false
                         },
                         tooltip: {
-                            enabled: false
-                        },
-                        // 使用内联的afterDraw钩子直接在canvas上绘制数字
-                        afterDraw: function(chart) {
-                            const ctx = chart.ctx;
-                            const dataset = chart.data.datasets[0];
-                            
-                            // 设置字体样式
-                            ctx.font = 'bold 14px Arial';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillStyle = numberColor;
-                            
-                            // 直接在每个数据点位置绘制数字
-                            dataset.data.forEach((point, index) => {
-                                if (point.y !== null && point.y !== undefined) {
-                                    // 获取数据点的像素位置
-                                    const meta = chart.getDatasetMeta(0);
-                                    if (meta.data[index]) {
-                                        const pixelX = meta.data[index].x;
-                                        const pixelY = meta.data[index].y;
-                                        
-                                        // 直接绘制数字
-                                        ctx.fillText(point.y.toString(), pixelX, pixelY);
-                                    }
-                                }
-                            });
+                            enabled: true
                         }
                     },
                     scales: {
@@ -3141,14 +3109,28 @@
                             min: 0,
                             max: 80
                         }
-                    },
-                    // 禁用所有交互
-                    interaction: {
-                        intersect: false,
-                        mode: 'nearest',
-                        enabled: false
                     }
-                }
+                },
+                plugins: [{
+                    id: 'numberLabels',
+                    afterDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillStyle = numberColor;
+                        
+                        chart.data.datasets.forEach((dataset, datasetIndex) => {
+                            const meta = chart.getDatasetMeta(datasetIndex);
+                            meta.data.forEach((point, index) => {
+                                const value = dataset.data[index].y;
+                                if (value !== null && value !== undefined) {
+                                    ctx.fillText(value.toString(), point.x, point.y - 8);
+                                }
+                            });
+                        });
+                    }
+                }]
             });
             
             // 存储图表实例
