@@ -3062,7 +3062,7 @@
                 '#722ED1', '#165DFF', '#36CFC9', '#FFC53D', '#F53F3F',
                 '#722ED1', '#165DFF', '#36CFC9', '#FFC53D', '#F53F3F'
             ];
-            const borderColor = colors[position - 1];
+            const numberColor = colors[position - 1];
             
             // 初始化位置图表对象
             if (!localState.positionCharts) {
@@ -3079,68 +3079,80 @@
                 ctx.chart.destroy();
             }
             
-            // 创建新的图表实例
-            localState.positionCharts[position] = new Chart(ctx, {
-                type: 'line',
+            // 创建一个非常简单的图表，仅用于布局
+            const chart = new Chart(ctx, {
+                type: 'scatter', // 使用scatter类型可以更好地控制点位置
                 data: {
-                    labels: labels,
                     datasets: [{
-                        label: '', // 隐藏标签
-                        data: positionNumbers,
-                        borderColor: 'transparent', // 隐藏线条
-                        backgroundColor: 'transparent', // 隐藏背景
-                        tension: 0.4,
-                        pointRadius: 0, // 隐藏圆点
-                        pointHoverRadius: 0,
-                        fill: false
+                        data: positionNumbers.map((value, index) => ({
+                            x: index, // 使用索引作为x坐标
+                            y: value
+                        })).filter(item => item.y !== null),
+                        backgroundColor: 'transparent', // 完全透明的点
+                        pointRadius: 0, // 隐藏点
+                        pointHoverRadius: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    },
                     plugins: {
                         legend: {
-                            display: false, // 隐藏图例
-                        },
-                        title: {
                             display: false
                         },
                         tooltip: {
-                            enabled: false // 禁用提示框
+                            enabled: false
                         },
-                        // 配置已注册的自定义标签插件
-                        customLabels: {
-                            color: borderColor // 仅传入颜色配置
+                        // 使用内联的afterDraw钩子直接在canvas上绘制数字
+                        afterDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const dataset = chart.data.datasets[0];
+                            
+                            // 设置字体样式
+                            ctx.font = 'bold 14px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillStyle = numberColor;
+                            
+                            // 直接在每个数据点位置绘制数字
+                            dataset.data.forEach((point, index) => {
+                                if (point.y !== null && point.y !== undefined) {
+                                    // 获取数据点的像素位置
+                                    const meta = chart.getDatasetMeta(0);
+                                    if (meta.data[index]) {
+                                        const pixelX = meta.data[index].x;
+                                        const pixelY = meta.data[index].y;
+                                        
+                                        // 直接绘制数字
+                                        ctx.fillText(point.y.toString(), pixelX, pixelY);
+                                    }
+                                }
+                            });
                         }
                     },
                     scales: {
                         x: {
-                            display: false, // 隐藏x轴（期号）
-                            grid: {
-                                display: false // 隐藏网格线
-                            }
+                            display: false,
+                            min: -0.5,
+                            max: positionNumbers.length - 0.5
                         },
                         y: {
-                            display: false, // 隐藏y轴（号码）
-                            grid: {
-                                display: false // 隐藏网格线
-                            },
+                            display: false,
                             min: 0,
                             max: 80
                         }
                     },
-                    elements: {
-                        point: {
-                            backgroundColor: 'transparent', // 完全隐藏圆点
-                            borderWidth: 0 // 无边框
-                        }
+                    // 禁用所有交互
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        enabled: false
                     }
                 }
             });
+            
+            // 存储图表实例
+            localState.positionCharts[position] = chart;
         }
         
         // 强制刷新所有位置图表的函数
