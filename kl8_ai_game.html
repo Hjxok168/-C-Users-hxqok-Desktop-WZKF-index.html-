@@ -3046,8 +3046,9 @@
             ];
             const numberColor = colors[position - 1];
             
-            // 准备数据
+            // 准备数据和期号
             let positionNumbers = [];
+            let drawDates = [];
             
             // 获取历史数据
             if (localState.kl8HistoryData && localState.kl8HistoryData.length > 0) {
@@ -3058,6 +3059,15 @@
                     }
                     return null;
                 }).filter(n => n !== null);
+                
+                // 获取期号数据
+                drawDates = displayData.slice(0, positionNumbers.length).map(item => {
+                    if (item.issue) {
+                        // 只显示期号的后几位
+                        return item.issue.slice(-3);
+                    }
+                    return '';
+                });
             }
             
             // 销毁已存在的图表
@@ -3074,14 +3084,17 @@
             const chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: Array(positionNumbers.length).fill(''),
+                    labels: drawDates,
                     datasets: [{
-                        data: positionNumbers.map((value, index) => ({x: index, y: value})),
+                        data: positionNumbers,
                         borderColor: numberColor,
                         backgroundColor: numberColor + '20',
-                        pointRadius: 4,
+                        pointRadius: 5,
                         pointBackgroundColor: numberColor,
-                        borderWidth: 2
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        borderWidth: 2,
+                        fill: false
                     }]
                 },
                 options: {
@@ -3090,42 +3103,92 @@
                     animation: {
                         duration: 0
                     },
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 40,
+                            left: 20,
+                            right: 20
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: false
                         },
                         tooltip: {
-                            enabled: true
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: numberColor,
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `号码: ${context.parsed.y}`;
+                                },
+                                title: function(context) {
+                                    return `期号: ${context[0].label}`;
+                                }
+                            }
                         }
                     },
                     scales: {
                         x: {
-                            display: false,
-                            min: -0.5,
-                            max: positionNumbers.length - 0.5
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
                         },
                         y: {
-                            display: false,
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    size: 10
+                                },
+                                stepSize: 10
+                            },
                             min: 0,
                             max: 80
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 },
                 plugins: [{
                     id: 'numberLabels',
                     afterDraw: function(chart) {
                         const ctx = chart.ctx;
-                        ctx.font = 'bold 12px Arial';
+                        ctx.font = 'bold 14px Arial';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'bottom';
                         ctx.fillStyle = numberColor;
                         
+                        // 绘制号码标签，调整位置避免重叠
                         chart.data.datasets.forEach((dataset, datasetIndex) => {
                             const meta = chart.getDatasetMeta(datasetIndex);
                             meta.data.forEach((point, index) => {
-                                const value = dataset.data[index].y;
+                                const value = dataset.data[index];
                                 if (value !== null && value !== undefined) {
-                                    ctx.fillText(value.toString(), point.x, point.y - 8);
+                                    // 为避免重叠，在数据点上方添加足够空间
+                                    ctx.fillText(value.toString(), point.x, point.y - 10);
                                 }
                             });
                         });
