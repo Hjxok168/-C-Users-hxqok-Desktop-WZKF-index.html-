@@ -3116,23 +3116,8 @@
                             display: false
                         },
                         tooltip: {
-                            enabled: true,
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: numberColor,
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return `号码: ${context.parsed.y}`;
-                                },
-                                title: function(context) {
-                                    return `期号: ${context[0].label}`;
-                                }
-                            }
-                        }
+                        enabled: false
+                    }
                     },
                     scales: {
                         x: {
