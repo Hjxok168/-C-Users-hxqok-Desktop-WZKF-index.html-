@@ -3079,6 +3079,7 @@
                         },
                         // 自定义插件实现数字显示
                         customLabels: {
+                            color: borderColor, // 将颜色值作为插件配置传入
                             afterDatasetsDraw: function(chart) {
                                 const ctx = chart.ctx;
                                 chart.data.datasets.forEach(function(dataset, datasetIndex) {
@@ -3091,17 +3092,17 @@
                                                 // 获取数据点的位置
                                                 const x = element.x;
                                                 const y = element.y;
-                                                 
+                                                  
                                                 // 设置样式 - 使用更大更清晰的字体
                                                 ctx.save();
                                                 ctx.font = 'bold 14px Arial';
-                                                ctx.fillStyle = borderColor; // 使用线条颜色作为文字颜色
+                                                ctx.fillStyle = chart.options.plugins.customLabels.color; // 使用插件配置中的颜色
                                                 ctx.textAlign = 'center';
                                                 ctx.textBaseline = 'middle';
-                                                 
+                                                  
                                                 // 直接在位置上绘制数字（替代圆点）
                                                 ctx.fillText(value, x, y);
-                                                 
+                                                  
                                                 ctx.restore();
                                             }
                                         });
