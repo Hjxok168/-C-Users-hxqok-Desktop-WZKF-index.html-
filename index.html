@@ -1,13 +1,72 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <!-- 优先设置字符编码 -->
     <meta charset="UTF-8">
+    <!-- 强制设置Content-Type，确保IE等浏览器正确解析 -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!-- 确保浏览器使用最新渲染引擎 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 响应式设置 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 缓存控制 -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
+    <!-- Pragma指令，兼容旧浏览器 -->
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    
+    <!-- 预加载字体以确保正确渲染 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- 基础样式设置，确保文本正确渲染 -->
+    <style>
+        /* 确保所有文本使用UTF-8编码渲染 */
+        * {
+            font-family: 'Inter', 'Microsoft YaHei', '微软雅黑', 'PingFang SC', '苹方', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        
+        /* 防止文本显示为乱码的备用样式 */
+        body {
+            color: #1D2129;
+            background-color: #F9FAFB;
+            line-height: 1.6;
+        }
+    </style>
     <title>高端知识探索</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="scripts.js" defer></script>
+    <link rel="stylesheet" href="styles_fixed.css">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 编码检测和修复脚本 -->
+    <script>
+        // 检查页面编码
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面编码:', document.characterSet);
+            console.log('页面渲染模式:', document.compatMode);
+            
+            // 尝试修复可能的编码问题
+            function fixEncodingIssues() {
+                // 确保文档字符集为UTF-8
+                if (document.characterSet !== 'UTF-8') {
+                    console.warn('检测到非UTF-8编码，尝试重新加载页面');
+                    // 强制以UTF-8重新加载页面
+                    location.href = 'file://' + location.pathname + '?fix_encoding=1';
+                }
+                
+                // 添加CSS类以确保文本正确渲染
+                document.body.classList.add('font-sans');
+            }
+            
+            // 执行编码修复
+            fixEncodingIssues();
+            
+            // 通知用户编码设置已优化
+            console.log('中文显示优化已应用');
+        });
+    </script>
     <!-- Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- Google Fonts -->
@@ -4684,7 +4743,7 @@
                                         <i class="fa fa-weixin" title="点击查看微信二维码"></i>
                                     </a>
                                     <div class="absolute left-full ml-2 top-0 bg-white p-2 rounded-lg shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
-                                        <img src="images/wechat-qr.jpg" alt="微信二维码" class="w-48 h-auto object-contain" title="扫一扫添加微信">
+                                        <img src="images/wechat-qr.svg" alt="微信二维码" class="w-48 h-auto object-contain" title="扫一扫添加微信">
                                         <p class="text-xs text-center text-gray-600 mt-1">hxq1456868666</p>
                                     </div>
                                 </div>
@@ -4828,7 +4887,7 @@
                             <div class="relative group mr-3">
                                 <i class="fa fa-weixin text-accent mt-1 text-lg cursor-pointer" title="点击查看微信二维码"></i>
                                 <div class="absolute left-full ml-2 top-0 bg-white p-2 rounded-lg shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
-                                    <img src="images/wechat-qr.jpg" alt="微信二维码" class="w-48 h-auto object-contain" title="扫一扫添加微信">
+                                    <img src="images/wechat-qr.svg" alt="微信二维码" class="w-48 h-auto object-contain" title="扫一扫添加微信">
                                     <p class="text-xs text-center text-gray-600 mt-1">hxq1456868666</p>
                                 </div>
                             </div>
