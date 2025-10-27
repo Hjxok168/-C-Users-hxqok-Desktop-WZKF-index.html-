@@ -795,7 +795,8 @@
         Object.assign(localState, {
             model: null,
             lastPrediction: null,
-            historyUpdateInterval: null // 添加定时器引用
+            historyUpdateInterval: null, // 添加定时器引用
+            lastDigitCharts: {} // 添加末位号码图表对象
         });
 
         // 启动历史数据自动更新
@@ -3423,6 +3424,11 @@
             // 确保positionCharts对象存在
             if (!localState.positionCharts) {
                 localState.positionCharts = {};
+            }
+            
+            // 确保lastDigitCharts对象存在
+            if (!localState.lastDigitCharts) {
+                localState.lastDigitCharts = {};
             }
             
             // 初始化所有20个位置的走势图
